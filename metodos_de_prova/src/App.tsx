@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BlockMath, InlineMath } from 'react-katex';
 import 'katex/dist/katex.min.css'; // Import KaTeX CSS
-import mermaid from 'mermaid'; // Mermaid será carregado via CDN
+// mermaid não será importado diretamente aqui, mas carregado via CDN
 
 // Extende a tipagem do Window para incluir 'katex' e 'mermaid'
 declare global {
@@ -11,7 +11,7 @@ declare global {
   }
 }
 
-// Componente para renderizar expressões KaTeX
+// Componente para renderizar expressões KaTeX (mantido como está, pois já está bom)
 type KaTeXRendererProps = {
   math: string;
   displayMode?: boolean;
@@ -21,71 +21,83 @@ const KaTeXRenderer: React.FC<KaTeXRendererProps> = ({ math, displayMode = false
   const ref = useRef<HTMLSpanElement | null>(null);
 
   useEffect(() => {
-    // Verifica se KaTeX está disponível globalmente
-    if (window.katex) {
+    if (window.katex && ref.current) {
       try {
         window.katex.render(math, ref.current, {
           displayMode: displayMode,
-          throwOnError: false, // Não lança erro, apenas mostra a mensagem de erro
+          throwOnError: false,
         });
       } catch (e) {
         console.error("KaTeX rendering error:", e);
-        // Exibe uma mensagem de erro no lugar da expressão
-        if (ref.current) {
-          const errorMsg = (e instanceof Error) ? e.message : String(e);
+        const errorMsg = (e instanceof Error) ? e.message : String(e);
+        if (ref.current) { // Verifica se ref.current ainda existe antes de manipular o DOM
           ref.current.innerHTML = `<span style="color: red;">Erro de renderização matemática: ${errorMsg}</span>`;
         }
       }
     }
-  }, [math, displayMode]); // Re-renderiza se a expressão matemática ou o modo de exibição mudar
+  }, [math, displayMode]);
 
   return <span ref={ref} />;
 };
 
 
-// Componente para renderizar diagramas Mermaid
+// Componente para renderizar diagramas Mermaid (AJUSTADO)
 type MermaidDiagramProps = {
   chart: string;
+  // Adicione uma prop para indicar se o Mermaid está carregado
+  isMermaidLoaded: boolean;
 };
 
-const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ chart }) => {
-  const [svg, setSvg] = useState('');
-  const [mermaidReady, setMermaidReady] = useState(false); // Novo estado para controlar o carregamento do Mermaid
+const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ chart, isMermaidLoaded }) => {
+  const mermaidRef = useRef<HTMLDivElement | null>(null);
+  const [renderError, setRenderError] = useState<string | null>(null);
+  const [diagramSvg, setDiagramSvg] = useState<string | null>(null);
 
   useEffect(() => {
-    // Verifica se mermaid está disponível globalmente e inicializa se necessário
-    if (window.mermaid && !mermaidReady) {
-      // mermaid.initialize({ startOnLoad: true }); // Já inicializado no componente App
-      setMermaidReady(true);
-    }
-  }, [mermaidReady]);
+    // Só tenta renderizar se o Mermaid estiver carregado, a referência estiver pronta e houver um diagrama
+    if (isMermaidLoaded && window.mermaid && mermaidRef.current && chart) {
+      setRenderError(null); // Limpa erros anteriores
+      setDiagramSvg(null); // Limpa SVG anterior
 
-  useEffect(() => {
-    // Renderiza o diagrama apenas se o chart e o mermaid estiverem prontos
-    if (chart && mermaidReady) {
-      window.mermaid.render('mermaid-svg', chart)
+      const uniqueId = `mermaid-chart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      window.mermaid.render(uniqueId, chart)
         .then(({ svg }: { svg: string }) => {
-          setSvg(svg);
+          setDiagramSvg(svg);
         })
         .catch((error: unknown) => {
           console.error("Mermaid rendering error:", error);
-          setSvg('<p style="color: red;">Erro ao renderizar diagrama.</p>');
+          setRenderError('Erro ao renderizar diagrama.');
         });
+    } else if (!isMermaidLoaded) {
+      setRenderError(null); // Limpa erro se o problema for só o carregamento
+      setDiagramSvg(null); // Limpa SVG
+      // Poderíamos mostrar "Carregando Mermaid..." aqui se quisesse uma mensagem mais granular
+    } else if (!chart) {
+      setRenderError('Nenhum diagrama Mermaid fornecido.');
+      setDiagramSvg(null);
     }
-  }, [chart, mermaidReady]); // Re-renderiza se chart ou mermaidReady mudar
+  }, [chart, isMermaidLoaded]); // Agora depende de isMermaidLoaded também
 
   return (
     <div className="flex justify-center items-center p-4 bg-gray-50 rounded-lg shadow-inner">
-      {svg ? (
-        <div dangerouslySetInnerHTML={{ __html: svg }} className="w-full h-auto max-w-full overflow-x-auto" />
+      {renderError ? (
+        <p className="text-red-600 font-semibold">{renderError}</p>
+      ) : diagramSvg ? (
+        <div
+          ref={mermaidRef}
+          dangerouslySetInnerHTML={{ __html: diagramSvg }}
+          className="w-full h-auto max-w-full overflow-x-auto"
+        />
       ) : (
-        <p className="text-gray-500">Carregando diagrama...</p>
+        <p className="text-gray-500">Carregando diagrama...</p> // Mensagem quando está esperando
       )}
     </div>
   );
 };
 
-// Componente da Navbar
+
+// Componente da Navbar (mantido como está)
 type NavbarProps = {
   setCurrentPage: (page: string) => void;
   currentPage: string;
@@ -138,7 +150,7 @@ const Navbar: React.FC<NavbarProps> = ({ setCurrentPage, currentPage }) => {
   );
 };
 
-// Componente para a Página Inicial
+// Componente para a Página Inicial (mantido como está)
 type HomePageProps = {
   setCurrentPage: (page: string) => void;
 };
@@ -180,7 +192,7 @@ const HomePage: React.FC<HomePageProps> = ({ setCurrentPage }) => (
   </div>
 );
 
-// Componente de layout para as páginas dos métodos
+// Componente de layout para as páginas dos métodos (mantido como está)
 interface MethodPageLayoutProps {
   title: React.ReactNode;
   description: React.ReactNode;
@@ -197,11 +209,12 @@ interface MethodPageLayoutProps {
     caption?: string;
   };
   extraContent?: React.ReactNode;
+  isMermaidLoaded: boolean; // Adicione esta linha
 }
 
-const MethodPageLayout: React.FC<MethodPageLayoutProps> = ({ title, description, steps, examples, diagram, image, extraContent }) => (
+const MethodPageLayout: React.FC<MethodPageLayoutProps> = ({ title, description, steps, examples, diagram, image, extraContent, isMermaidLoaded }) => (
   <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-4 sm:p-6 lg:p-8 font-inter">
-    <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl max-w-4xl mx-auto">
+    <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl max-w-6xl mx-auto">
       <h2 className="text-3xl sm:text-4xl font-extrabold text-blue-800 mb-6 border-b-4 border-blue-500 pb-3">
         {title}
       </h2>
@@ -249,7 +262,7 @@ const MethodPageLayout: React.FC<MethodPageLayoutProps> = ({ title, description,
             <svg className="w-6 h-6 text-orange-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 12l3-3 3 3 3-3M6 6h12a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2z"></path></svg>
             Diagrama:
           </h3>
-          <MermaidDiagram chart={diagram} />
+          <MermaidDiagram chart={diagram} isMermaidLoaded={isMermaidLoaded} /> {/* Passe a prop aqui */}
           <p className="text-sm text-gray-600 mt-2 text-center">
             [Image of Diagrama do Fluxo do Método]
           </p>
@@ -274,8 +287,8 @@ const MethodPageLayout: React.FC<MethodPageLayoutProps> = ({ title, description,
   </div>
 );
 
-// Componentes para cada método
-const DirectMethod = () => (
+// Componentes para cada método (Ajustado para KaTeXRenderer)
+const DirectMethod: React.FC<{ isMermaidLoaded: boolean }> = ({ isMermaidLoaded }) => (
   <MethodPageLayout
     title="Método Direto"
     description={
@@ -331,10 +344,11 @@ graph TD
       alt: "Representação visual do fluxo do método direto",
       caption: "Representação visual do fluxo do Método Direto."
     }}
+    isMermaidLoaded={isMermaidLoaded}
   />
 );
 
-const ContraexampleMethod = () => (
+const ContraexampleMethod: React.FC<{ isMermaidLoaded: boolean }> = ({ isMermaidLoaded }) => (
   <MethodPageLayout
     title="Prova por Contraexemplo"
     description={
@@ -372,10 +386,11 @@ graph TD
       alt: "Representação visual de um contraexemplo",
       caption: "Um único contraexemplo é suficiente para refutar uma afirmação universal."
     }}
+    isMermaidLoaded={isMermaidLoaded}
   />
 );
 
-const AbsurdMethod = () => (
+const AbsurdMethod: React.FC<{ isMermaidLoaded: boolean }> = ({ isMermaidLoaded }) => (
   <MethodPageLayout
     title="Redução por Absurdo (Prova por Contradição)"
     description={
@@ -425,10 +440,11 @@ graph TD
       alt: "Representação visual da redução por absurdo",
       caption: "A prova por absurdo busca uma contradição para validar a afirmação."
     }}
+    isMermaidLoaded={isMermaidLoaded}
   />
 );
 
-const ContrapositiveMethod = () => (
+const ContrapositiveMethod: React.FC<{ isMermaidLoaded: boolean }> = ({ isMermaidLoaded }) => (
   <MethodPageLayout
     title="Método Contrapositivo"
     description={
@@ -480,10 +496,11 @@ graph TD
       alt: "Representação visual do método contrapositivo",
       caption: "A contrapositiva oferece uma rota alternativa para a prova."
     }}
+    isMermaidLoaded={isMermaidLoaded}
   />
 );
 
-const InductionMethod = () => (
+const InductionMethod: React.FC<{ isMermaidLoaded: boolean }> = ({ isMermaidLoaded }) => (
   <MethodPageLayout
     title="Prova por Indução Matemática"
     description={
@@ -543,6 +560,7 @@ graph TD
       alt: "Representação visual da indução matemática",
       caption: "A indução matemática é como uma fila de dominós: derrube o primeiro (passo base) e cada um derruba o próximo (passo indutivo)."
     }}
+    isMermaidLoaded={isMermaidLoaded}
   />
 );
 
@@ -552,13 +570,14 @@ const App = () => {
   const [currentPage, setCurrentPage] = useState('home');
   const [katexLoaded, setKatexLoaded] = useState(false);
   const [mermaidLoaded, setMermaidLoaded] = useState(false);
+  const [tailwindLoaded, setTailwindLoaded] = useState(false);
 
   useEffect(() => {
     // Carrega o CSS do KaTeX
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css';
-    document.head.appendChild(link);
+    const linkKatex = document.createElement('link');
+    linkKatex.rel = 'stylesheet';
+    linkKatex.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css';
+    document.head.appendChild(linkKatex);
 
     // Carrega o JS do KaTeX
     const scriptKatex = document.createElement('script');
@@ -573,25 +592,44 @@ const App = () => {
     scriptMermaid.src = 'https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js';
     scriptMermaid.onload = () => {
       setMermaidLoaded(true);
-      // Inicializa Mermaid após o carregamento
+      // Inicializa Mermaid APENAS UMA VEZ AQUI
       if (window.mermaid) {
-        window.mermaid.initialize({ startOnLoad: true });
+        window.mermaid.initialize({ startOnLoad: false }); // Desabilita o startOnLoad globalmente
       }
     };
     document.body.appendChild(scriptMermaid);
 
+    // Carrega o JS do Tailwind CSS
+    const scriptTailwind = document.createElement('script');
+    scriptTailwind.src = 'https://cdn.tailwindcss.com';
+    scriptTailwind.onload = () => {
+      setTailwindLoaded(true);
+    };
+    document.body.appendChild(scriptTailwind);
+
 
     // Limpeza ao desmontar o componente
     return () => {
-      document.head.removeChild(link);
-      document.body.removeChild(scriptKatex);
-      document.body.removeChild(scriptMermaid);
+      // É importante verificar se os elementos foram realmente adicionados antes de tentar removê-los
+      if (document.head.contains(linkKatex)) {
+        document.head.removeChild(linkKatex);
+      }
+      if (document.body.contains(scriptKatex)) {
+        document.body.removeChild(scriptKatex);
+      }
+      if (document.body.contains(scriptMermaid)) {
+        document.body.removeChild(scriptMermaid);
+      }
+      if (document.body.contains(scriptTailwind)) {
+        document.body.removeChild(scriptTailwind);
+      }
     };
-  }, []); // Array de dependências vazio para rodar apenas uma vez
+  }, []);
 
+  // Função para renderizar as páginas
   const renderPage = () => {
-    // Renderiza as páginas somente após o KaTeX estar carregado
-    if (!katexLoaded) {
+    // Renderiza as páginas somente após todos os recursos estarem carregados
+    if (!katexLoaded || !mermaidLoaded || !tailwindLoaded) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100">
           <p className="text-xl text-gray-700">Carregando recursos...</p>
@@ -603,15 +641,15 @@ const App = () => {
       case 'home':
         return <HomePage setCurrentPage={setCurrentPage} />;
       case 'direct':
-        return <DirectMethod />;
+        return <DirectMethod isMermaidLoaded={mermaidLoaded} />;
       case 'contraexample':
-        return <ContraexampleMethod />;
+        return <ContraexampleMethod isMermaidLoaded={mermaidLoaded} />;
       case 'absurd':
-        return <AbsurdMethod />;
+        return <AbsurdMethod isMermaidLoaded={mermaidLoaded} />;
       case 'contrapositive':
-        return <ContrapositiveMethod />;
+        return <ContrapositiveMethod isMermaidLoaded={mermaidLoaded} />;
       case 'induction':
-        return <InductionMethod />;
+        return <InductionMethod isMermaidLoaded={mermaidLoaded} />;
       default:
         return <HomePage setCurrentPage={setCurrentPage} />;
     }
@@ -626,3 +664,4 @@ const App = () => {
 };
 
 export default App;
+
