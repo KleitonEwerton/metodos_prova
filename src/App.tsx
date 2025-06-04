@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BlockMath, InlineMath } from 'react-katex';
+// import { BlockMath, InlineMath } from 'react-katex';
 import 'katex/dist/katex.min.css'; // Import KaTeX CSS
 // mermaid não será importado diretamente aqui, mas carregado via CDN
 
