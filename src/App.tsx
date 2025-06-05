@@ -157,7 +157,7 @@ type HomePageProps = {
 
 const HomePage: React.FC<HomePageProps> = ({ setCurrentPage }) => (
   <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col items-center justify-center p-4">
-    <div className="bg-white p-8 rounded-2xl shadow-xl max-w-3xl w-full text-center">
+    <div className="bg-white p-8 rounded-2xl shadow-xl max-w-full w-full text-center">
       <h2 className="text-4xl font-extrabold text-gray-800 mb-6 font-inter">
         Bem-vindo aos Métodos de Prova Matemática
       </h2>
@@ -213,8 +213,8 @@ interface MethodPageLayoutProps {
 }
 
 const MethodPageLayout: React.FC<MethodPageLayoutProps> = ({ title, description, steps, examples, diagram, image, extraContent, isMermaidLoaded }) => (
-  <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-4 sm:p-6 lg:p-8 font-inter">
-    <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl max-w-6xl mx-auto">
+  <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-4 sm:p-6 lg:p-8 font-inter w-full">
+    <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl max-w-full  w-full">
       <h2 className="text-3xl sm:text-4xl font-extrabold text-blue-800 mb-6 border-b-4 border-blue-500 pb-3">
         {title}
       </h2>
@@ -224,7 +224,7 @@ const MethodPageLayout: React.FC<MethodPageLayoutProps> = ({ title, description,
 
       {steps && (
         <div className="mb-8">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+          <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center ">
             <svg className="w-6 h-6 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M17 16h.01"></path></svg>
             Passos:
           </h3>
@@ -631,7 +631,7 @@ const App = () => {
     // Renderiza as páginas somente após todos os recursos estarem carregados
     if (!katexLoaded || !mermaidLoaded || !tailwindLoaded) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="min-h-screen flex items-center justify-center bg-gray-100  w-full">
           <p className="text-xl text-gray-700">Carregando recursos...</p>
         </div>
       );
@@ -656,7 +656,7 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 ">
       <Navbar setCurrentPage={setCurrentPage} currentPage={currentPage} />
       {renderPage()}
     </div>
