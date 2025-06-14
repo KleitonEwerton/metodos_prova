@@ -1,3 +1,9 @@
+# Como executar o projeto inicial
+\* É necessário ter o _NodeJS_ e o _NPM/Yarn_ instalados.
+1. Abra o Terminal na Pasta do Projeto;
+2. Instale as dependências necessárias: `npm install`;
+4. Para rodar o projeto utilize `npm run dev`
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
